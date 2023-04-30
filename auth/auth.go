@@ -4,6 +4,7 @@ import (
 	"context"
 	firebase "firebase.google.com/go/v4"
 	"firebase.google.com/go/v4/auth"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"google.golang.org/api/option"
 	"net/http"
@@ -44,49 +45,21 @@ func InitializeAuthClient(ctx context.Context) error {
 	return nil
 }
 
-func Login(c *gin.Context) {
-	var json LoginData
-	if err := c.ShouldBindJSON(&json); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	user, err := authClient.GetUserByEmail(context.Background(), json.Email)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid email or password"})
-		return
-	}
-
-	//// Verify the password
-	//signInReq := &firebaseauth.SignInWithEmailAndPasswordRequest{
-	//	Email:    json.Email,
-	//	Password: json.Password,
-	//}
-	//_, err = authClient.SignInWithEmailAndPassword(context.Background(), signInReq)
-	//if err != nil {
-	//	c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid email or password"})
-	//	return
-	//}
-
-	// Create a custom token
-	customToken, err := authClient.CustomToken(context.Background(), user.UID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create custom token"})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"token": customToken})
-}
-
 // AuthenticateUser is a middleware function that verifies the user's ID token
 func AuthenticateUser() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		// Get ID token from Authorization header
 		authHeader := ctx.Request.Header.Get("Authorization")
+		if authHeader == "" {
+			ctx.AbortWithStatus(http.StatusForbidden)
+			return
+		}
 		idToken := strings.Replace(authHeader, "Bearer ", "", 1)
+		fmt.Println("idToken: ", idToken)
 
 		// Verify ID token
 		token, err := authClient.VerifyIDToken(ctx, idToken)
+		fmt.Println("token: ", token.UID)
 		if err != nil {
 			ctx.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 			ctx.Abort()

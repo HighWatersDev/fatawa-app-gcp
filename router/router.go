@@ -4,41 +4,19 @@ import (
 	"context"
 	"fatawa-app-gcp/auth"
 	"fatawa-app-gcp/db"
-	"net/http"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
-func getDocumentByID(c *gin.Context) {
-	docID := c.Param("id")
-
-	doc, err := db.GetDocumentByID(c, docID)
-	if err != nil {
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-
-	c.JSON(http.StatusOK, doc)
-}
-
-func createDocument(c *gin.Context) {
-	var doc db.Document
-	if err := c.ShouldBindJSON(&doc); err != nil {
-		c.AbortWithStatus(http.StatusBadRequest)
-		return
-	}
-
-	docID, err := db.CreateDocument(c, doc)
-	if err != nil {
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"document_id": docID})
-}
-
 func SetupRouter(ctx context.Context) *gin.Engine {
 	r := gin.Default()
+	r.Use(cors.New(cors.Config{
+		AllowAllOrigins:  true,
+		AllowMethods:     []string{"GET", "HEAD", "OPTIONS", "POST", "PUT", "DELETE", "PATCH"},
+		AllowHeaders:     []string{"Request", "Authorization", "Origin", "Accept", "X-Requested-With", "Content-Type"},
+		AllowCredentials: true,
+	}))
 
 	// Initialize Firebase Auth client
 	err := auth.InitializeAuthClient(ctx)
@@ -55,11 +33,10 @@ func SetupRouter(ctx context.Context) *gin.Engine {
 	// Define routes
 	v1 := r.Group("/v1")
 	{
-		v1.Use(auth.AuthenticateUser())
-
-		v1.GET("/documents/:id", getDocumentByID)
-		v1.POST("/documents", createDocument)
-		v1.POST("login", auth.Login)
+		v1.GET("/documents/:id", auth.AuthenticateUser(), getDocumentByID)
+		v1.POST("/documents", auth.AuthenticateUser(), createDocument)
+		v1.GET("/documents/search", auth.AuthenticateUser(), searchDocuments)
+		v1.POST("/verify", auth.AuthenticateUser())
 	}
 
 	return r

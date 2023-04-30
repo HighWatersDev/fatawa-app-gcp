@@ -3,6 +3,8 @@ package db
 import (
 	"cloud.google.com/go/firestore"
 	"context"
+	"google.golang.org/api/iterator"
+	"strings"
 
 	"google.golang.org/api/option"
 )
@@ -67,4 +69,35 @@ func CreateDocument(ctx context.Context, doc Document) (string, error) {
 	}
 
 	return docRef.ID, nil
+}
+
+func SearchDocuments(c context.Context, searchQuery string) ([]Document, error) {
+	documents := []Document{}
+
+	q := client.Collection("salafifatawa").
+		OrderBy("title", firestore.Asc).
+		StartAt(strings.ToLower(searchQuery)).
+		EndAt(strings.ToLower(searchQuery + "\uf8ff"))
+
+	iter := q.Documents(c)
+
+	for {
+		doc, err := iter.Next()
+		if err == iterator.Done {
+			break
+		}
+		if err != nil {
+			return documents, err
+		}
+
+		var d Document
+		err = doc.DataTo(&d)
+		if err != nil {
+			return documents, err
+		}
+
+		documents = append(documents, d)
+	}
+
+	return documents, nil
 }

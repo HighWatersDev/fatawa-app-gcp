@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getAuth, setPersistence, browserSessionPersistence } from 'firebase/auth';
+import { getAuth, setPersistence, browserSessionPersistence, signInWithEmailAndPassword } from 'firebase/auth';
 
 const firebaseConfig = {
     apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -12,13 +12,13 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
-export const auth = getAuth(app);
+const auth = getAuth(app);
 setPersistence(auth, browserSessionPersistence)
 
-export const signInWithEmailAndPassword = async (email, password) => {
+export const signInWith = async (email, password) => {
     console.log(auth);
     try {
-        const { user } = await auth.signInWithEmailAndPassword(email, password);
+        const { user } = await signInWithEmailAndPassword(auth, email, password);
         return user;
     } catch (error) {
         console.error(error);

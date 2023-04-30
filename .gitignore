@@ -1,3 +1,4 @@
-
+frontend/.svelte-kit
 .DS_Store
 server/salafifatawa-firestore.json
+.idea
