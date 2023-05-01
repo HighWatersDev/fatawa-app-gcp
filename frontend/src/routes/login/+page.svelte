@@ -47,7 +47,7 @@
 
 
 <script>
-	import { signInWith } from './../../lib/auth.js';
+	import { signInWith } from '$lib/auth.js';
     import { onMount } from 'svelte';
     import { onAuthStateChanged } from '$lib/auth';
     import { writable } from 'svelte/store';

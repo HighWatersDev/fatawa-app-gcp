@@ -18,6 +18,8 @@
 	},
 	"type": "module",
 	"dependencies": {
-		"firebase": "^9.20.0"
+		"cookie": "^0.5.0",
+		"firebase": "^9.20.0",
+		"svelte-router-spa": "^6.0.3"
 	}
 }
