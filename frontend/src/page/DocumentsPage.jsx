@@ -1,24 +1,7 @@
 import React, {useEffect, useState} from 'react';
 import axios from 'axios';
 import {auth} from '../firebase';
-
-function withAuth(Component) {
-    return function AuthenticatedComponent(props) {
-        const [user, setUser] = useState(null);
-
-        useEffect(() => {
-            return auth.onAuthStateChanged((user) => {
-                setUser(user);
-            });
-        }, []);
-
-        if (!user) {
-            return <h1>403 - Access Forbidden</h1>;
-        }
-
-        return <Component {...props} />;
-    };
-}
+import { withAuth } from '../components/withAuth';
 
 function DocumentsPage() {
     const [title, setTitle] = useState('');
@@ -27,6 +10,7 @@ function DocumentsPage() {
     const [answer, setAnswer] = useState('');
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState([]);
+    const [successMessage, setSuccessMessage] = useState('');
     const [errorMessage, setErrorMessage] = useState('');
     const handleSubmit = async (event) => {
         event.preventDefault();
@@ -43,8 +27,12 @@ function DocumentsPage() {
         try {
             const response = await axios.post('http://localhost:8080/v1/documents', data, { headers });
             console.log(response.data);
+            setSuccessMessage(`Fatwa with id ${response.data.document_id} created successfully`);
+            setErrorMessage('');
         } catch (error) {
             console.error(error);
+            setErrorMessage('Failed to create fatwa');
+            setSuccessMessage('');
         }
     };
 
@@ -106,6 +94,8 @@ function DocumentsPage() {
                 <br />
                 <button type="submit">Submit</button>
             </form>
+            {successMessage && <p>{successMessage}</p>}
+            {errorMessage && <p>{errorMessage}</p>}
             <hr />
             <h2>Search for Fatwa</h2>
             <form onSubmit={handleSearchSubmit}>
