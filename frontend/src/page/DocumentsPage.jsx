@@ -56,7 +56,6 @@ function DocumentsPage() {
                 'Authorization': `Bearer ${token}`
             };
             const response = await axios.get(`http://localhost:8080/v1/documents/search?search=${searchQuery}`, { headers });
-            console.log(response.data);
             setSearchResults(response.data['documents']);
             setErrorMessage('');
         } catch (error) {
