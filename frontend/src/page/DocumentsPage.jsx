@@ -66,7 +66,7 @@ function DocumentsPage() {
 
     return (
         <div>
-            <h2>Submit a New Document</h2>
+            <h2>Submit a New Fatwa</h2>
             <form onSubmit={handleSubmit}>
                 <label>
                     Title:
@@ -107,7 +107,7 @@ function DocumentsPage() {
                 <button type="submit">Submit</button>
             </form>
             <hr />
-            <h2>Search for Documents</h2>
+            <h2>Search for Fatwa</h2>
             <form onSubmit={handleSearchSubmit}>
                 <label>
                     Search Query:
