@@ -1,6 +1,24 @@
-import React, { useState } from 'react';
+import React, {useEffect, useState} from 'react';
 import axios from 'axios';
-import { auth } from '../firebase';
+import {auth} from '../firebase';
+
+function withAuth(Component) {
+    return function AuthenticatedComponent(props) {
+        const [user, setUser] = useState(null);
+
+        useEffect(() => {
+            return auth.onAuthStateChanged((user) => {
+                setUser(user);
+            });
+        }, []);
+
+        if (!user) {
+            return <h1>403 - Access Forbidden</h1>;
+        }
+
+        return <Component {...props} />;
+    };
+}
 
 function DocumentsPage() {
     const [title, setTitle] = useState('');
@@ -70,4 +88,4 @@ function DocumentsPage() {
     );
 }
 
-export default DocumentsPage;
+export default withAuth(DocumentsPage);
