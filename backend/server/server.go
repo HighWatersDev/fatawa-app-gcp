@@ -2,9 +2,8 @@ package server
 
 import (
 	"context"
+	"fatawa-app-gcp/backend/router"
 	"log"
-
-	"fatawa-app-gcp/router"
 )
 
 func StartServer(ctx context.Context) error {

@@ -2,11 +2,10 @@ package main
 
 import (
 	"context"
-	"fatawa-app-gcp/server"
+	"fatawa-app-gcp/backend/auth"
+	"fatawa-app-gcp/backend/db"
+	"fatawa-app-gcp/backend/server"
 	"log"
-
-	"fatawa-app-gcp/auth"
-	"fatawa-app-gcp/db"
 )
 
 func main() {

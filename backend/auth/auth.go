@@ -31,7 +31,7 @@ type LoginData struct {
 
 // InitializeAuthClient initializes the Firebase Auth client
 func InitializeAuthClient(ctx context.Context) error {
-	opt := option.WithCredentialsFile("server/salafifatawa-firestore.json")
+	opt := option.WithCredentialsFile("backend/salafifatawa-firestore.json")
 	app, err := firebase.NewApp(ctx, nil, opt)
 	if err != nil {
 		return err

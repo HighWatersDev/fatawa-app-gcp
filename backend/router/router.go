@@ -2,9 +2,8 @@ package router
 
 import (
 	"context"
-	"fatawa-app-gcp/auth"
-	"fatawa-app-gcp/db"
-
+	"fatawa-app-gcp/backend/auth"
+	"fatawa-app-gcp/backend/db"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )

@@ -1,7 +1,7 @@
 package router
 
 import (
-	"fatawa-app-gcp/db"
+	"fatawa-app-gcp/backend/db"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )

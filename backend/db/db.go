@@ -21,7 +21,7 @@ var client *firestore.Client
 
 // InitializeFirestoreClient initializes the Firestore client
 func InitializeFirestoreClient(ctx context.Context, projectID string) error {
-	creds := option.WithCredentialsFile("server/salafifatawa-firestore.json")
+	creds := option.WithCredentialsFile("backend/salafifatawa-firestore.json")
 	firestoreClient, err := firestore.NewClient(ctx, projectID, creds)
 	if err != nil {
 		return err
