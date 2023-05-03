@@ -31,6 +31,22 @@ func InitializeFirestoreClient(ctx context.Context, projectID string) error {
 	return nil
 }
 
+// CreateDocument creates a new document in Firestore
+func CreateDocument(ctx context.Context, doc Document) (string, error) {
+	docRef, _, err := client.Collection("salafifatawa").Add(ctx, map[string]interface{}{
+		"title":    doc.Title,
+		"author":   doc.Author,
+		"question": doc.Question,
+		"answer":   doc.Answer,
+	})
+
+	if err != nil {
+		return "", err
+	}
+
+	return docRef.ID, nil
+}
+
 // GetDocumentByID retrieves a single document by ID
 func GetDocumentByID(ctx context.Context, docID string) (Document, error) {
 	// Get document reference
@@ -55,24 +71,8 @@ func GetDocumentByID(ctx context.Context, docID string) (Document, error) {
 	return doc, nil
 }
 
-// CreateDocument creates a new document in Firestore
-func CreateDocument(ctx context.Context, doc Document) (string, error) {
-	docRef, _, err := client.Collection("salafifatawa").Add(ctx, map[string]interface{}{
-		"title":    doc.Title,
-		"author":   doc.Author,
-		"question": doc.Question,
-		"answer":   doc.Answer,
-	})
-
-	if err != nil {
-		return "", err
-	}
-
-	return docRef.ID, nil
-}
-
 func SearchDocuments(c context.Context, searchQuery string) ([]Document, error) {
-	documents := []Document{}
+	var documents []Document
 
 	q := client.Collection("salafifatawa").
 		OrderBy("title", firestore.Asc).
@@ -95,6 +95,8 @@ func SearchDocuments(c context.Context, searchQuery string) ([]Document, error) 
 		if err != nil {
 			return documents, err
 		}
+
+		d.ID = doc.Ref.ID
 
 		documents = append(documents, d)
 	}

@@ -10,6 +10,8 @@ function DocumentsPage() {
     const [answer, setAnswer] = useState('');
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState([]);
+    const [fatwaId, setFatwaId] = useState('');
+    const [fatwaResult, setFatwaResult] = useState([]);
     const [successMessage, setSuccessMessage] = useState('');
     const [errorMessage, setErrorMessage] = useState('');
     const handleSubmit = async (event) => {
@@ -43,11 +45,27 @@ function DocumentsPage() {
             const headers = {
                 'Authorization': `Bearer ${token}`
             };
-            const response = await axios.get(`http://localhost:8080/v1/documents/search?search=${searchQuery}`, { headers });
+            const response = await axios.get(`http://localhost:8080/v1/documents/search?query=${searchQuery}`, { headers });
             setSearchResults(response.data['documents']);
             setErrorMessage('');
         } catch (error) {
             setSearchResults([]);
+            setErrorMessage(error.message);
+        }
+    };
+
+    const handleSearchByIdSubmit = async (event) => {
+        event.preventDefault();
+        try {
+            const token = await auth.currentUser.getIdToken();
+            const headers = {
+                'Authorization': `Bearer ${token}`
+            };
+            const response = await axios.get(`http://localhost:8080/v1/documents/${fatwaId}`, { headers });
+            setFatwaResult([response.data]);
+            setErrorMessage('');
+        } catch (error) {
+            setFatwaResult([]);
             setErrorMessage(error.message);
         }
     };
@@ -116,6 +134,35 @@ function DocumentsPage() {
             ) : (
                 <ul>
                     {searchResults.map((result) => (
+                        <li key={result.id}>
+                            <h3>{result.title}</h3>
+                            <p>Author: {result.author}</p>
+                            <p>Question: {result.question}</p>
+                            <p>Answer: {result.answer}</p>
+                        </li>
+                    ))}
+                </ul>
+            )}
+            <hr />
+            <h2>Get Fatwa by Id</h2>
+            <form onSubmit={handleSearchByIdSubmit}>
+                <label>
+                    Fatwa Id:
+                    <input
+                        type="text"
+                        value={fatwaId}
+                        onChange={(event) => setFatwaId(event.target.value)}
+                    />
+                </label>
+                <br />
+                <button type="submit">Get Fatwa</button>
+            </form>
+            {errorMessage && <p>{errorMessage}</p>}
+            {fatwaResult.length === 0 ? (
+                <p>No fatwa with this id found</p>
+            ) : (
+                <ul>
+                    {fatwaResult.map((result) => (
                         <li key={result.id}>
                             <h3>{result.title}</h3>
                             <p>Author: {result.author}</p>

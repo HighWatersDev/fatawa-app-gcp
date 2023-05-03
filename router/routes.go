@@ -41,7 +41,7 @@ func createDocument(c *gin.Context) {
 }
 
 func searchDocuments(c *gin.Context) {
-	searchQuery := c.Query("search")
+	searchQuery := c.Query("query")
 
 	if searchQuery == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"message": "Search query is required"})
