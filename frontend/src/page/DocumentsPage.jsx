@@ -136,6 +136,7 @@ function DocumentsPage() {
                     {searchResults.map((result) => (
                         <li key={result.id}>
                             <h3>{result.title}</h3>
+                            <p>Id: {result.id}</p>
                             <p>Author: {result.author}</p>
                             <p>Question: {result.question}</p>
                             <p>Answer: {result.answer}</p>
