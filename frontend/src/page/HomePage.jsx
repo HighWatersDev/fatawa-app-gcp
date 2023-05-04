@@ -29,25 +29,32 @@ const HomePage = () => {
 
     return (
         <div>
-            <h1>Welcome to Salafi Fatawa App</h1>
-            <nav>
-                <ul>
-                    <li>
-                        <Link to="/login">Login</Link>
-                    </li>
-                    <li>
-                        <Link to="/fatawa">Fatawa</Link>
-                    </li>
-                </ul>
-            </nav>
+            <header className={styles.header}>
+                <h1 className={styles.title}>Salafi Fatawa App</h1>
+                <nav className={styles.nav}>
+                    <ul>
+                        <li>
+                            <a href="/">Home</a>
+                        </li>
+                        <li>
+                            <a href="/fatawa">Fatawa</a>
+                        </li>
+                        <li>
+                            <a href="/login">Log In</a>
+                        </li>
+                        <li>
+                            <a href="/signup">Sign Up</a>
+                        </li>
+                    </ul>
+                </nav>
+            </header>
+            {userToken && (
             <div className={styles.container}>
                 <div className={styles.tokenBox}>
-                    {userToken && (
                         <code className={styles.tokenCode}>
                             <span className={styles.tokenLabel}>Your token:</span>{" "}
                             {userToken}
                         </code>
-                    )}
                 </div>
                 <CopyToClipboard text={userToken} onCopy={handleCopy}>
                     <button className={styles.copyButton}>
@@ -56,6 +63,7 @@ const HomePage = () => {
                     </button>
                 </CopyToClipboard>
             </div>
+            )}
         </div>
     );
 }
