@@ -35,6 +35,7 @@ func SetupRouter(ctx context.Context) *gin.Engine {
 		v1.GET("/documents/:id", auth.AuthenticateUser(), getDocumentByID)
 		v1.POST("/documents", auth.AuthenticateUser(), createDocument)
 		v1.GET("/documents/search", auth.AuthenticateUser(), searchDocuments)
+		v1.GET("/documents/all", auth.AuthenticateUser(), getAllDocuments)
 		v1.POST("/verify", auth.AuthenticateUser())
 	}
 

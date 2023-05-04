@@ -103,3 +103,32 @@ func SearchDocuments(c context.Context, searchQuery string) ([]Document, error) 
 
 	return documents, nil
 }
+
+func GetAllDocuments(c context.Context) ([]Document, error) {
+	var documents []Document
+
+	iter := client.Collection("salafifatawa").Documents(c)
+
+	for {
+		doc, err := iter.Next()
+		if err == iterator.Done {
+			break
+		}
+		if err != nil {
+			return documents, err
+		}
+
+		var d Document
+		err = doc.DataTo(&d)
+		if err != nil {
+			return documents, err
+		}
+
+		// Set the ID field to the document ID
+		d.ID = doc.Ref.ID
+
+		documents = append(documents, d)
+	}
+
+	return documents, nil
+}

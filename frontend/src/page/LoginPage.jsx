@@ -16,7 +16,6 @@ const Login = () => {
                 // Signed in
                 const user = userCredential.user;
                 navigate("/home")
-                console.log(user);
             })
             .catch((error) => {
                 const errorCode = error.code;
@@ -44,8 +43,6 @@ const Login = () => {
 
                             <form className="mt-8 space-y-6" >
                                 <div className=" space-y-6 rounded-md shadow-sm">
-
-
                                     <div>
                                         <label htmlFor="email-address" className="sr-only">
                                             Email address
@@ -85,7 +82,6 @@ const Login = () => {
                                         Login
                                     </button>
                                 </div>
-
                             </form>
 
                             <p className="text-sm text-white text-center">

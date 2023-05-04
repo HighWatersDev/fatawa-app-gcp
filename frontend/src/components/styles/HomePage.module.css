@@ -1,0 +1,42 @@
+.container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+.tokenBox {
+    background-color: #f7f7f7;
+    border-radius: 5px;
+    padding: 10px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    width: 80%;
+    max-width: 800px;
+}
+
+.tokenCode {
+    font-family: "Fira Code", monospace;
+    font-size: 1.2rem;
+    font-weight: bold;
+}
+
+.tokenLabel {
+    color: #888;
+}
+
+.copyButton {
+    margin-left: 10px;
+    padding: 5px 10px;
+    background-color: #f7f7f7;
+    border-radius: 5px;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+}
+
+.copyIcon {
+    margin-right: 5px;
+}
