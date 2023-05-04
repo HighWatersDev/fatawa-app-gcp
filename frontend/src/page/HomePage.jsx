@@ -40,14 +40,13 @@ const HomePage = () => {
                     </li>
                 </ul>
             </nav>
+            {userToken && (
             <div className={styles.container}>
                 <div className={styles.tokenBox}>
-                    {userToken && (
                         <code className={styles.tokenCode}>
                             <span className={styles.tokenLabel}>Your token:</span>{" "}
                             {userToken}
                         </code>
-                    )}
                 </div>
                 <CopyToClipboard text={userToken} onCopy={handleCopy}>
                     <button className={styles.copyButton}>
@@ -56,6 +55,7 @@ const HomePage = () => {
                     </button>
                 </CopyToClipboard>
             </div>
+            )}
         </div>
     );
 }
