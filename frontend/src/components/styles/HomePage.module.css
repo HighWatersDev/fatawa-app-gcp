@@ -9,9 +9,9 @@
     background-color: #f7f7f7;
     border-radius: 5px;
     padding: 10px;
-    overflow: hidden;
+    overflow: scroll;
     white-space: nowrap;
-    text-overflow: ellipsis;
+    /*text-overflow: ellipsis;*/
     width: 80%;
     max-width: 800px;
 }
