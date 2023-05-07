@@ -10,6 +10,7 @@ import (
 )
 
 type Document struct {
+	ID       string `json:"id"`
 	Folder   string `json:"folder"`
 	Title    string `json:"title"`
 	Author   string `json:"author"`
@@ -63,6 +64,7 @@ func GetDocumentByID(ctx context.Context, docID string) (Document, error) {
 	docData := docSnapshot.Data()
 	doc := Document{
 		ID:       docSnapshot.Ref.ID,
+		Folder:   docData["folder"].(string),
 		Title:    docData["title"].(string),
 		Author:   docData["author"].(string),
 		Question: docData["question"].(string),
