@@ -10,7 +10,7 @@ import (
 )
 
 type Document struct {
-	ID       string `json:"id"`
+	Folder   string `json:"folder"`
 	Title    string `json:"title"`
 	Author   string `json:"author"`
 	Question string `json:"question"`
@@ -34,6 +34,7 @@ func InitializeFirestoreClient(ctx context.Context, projectID string) error {
 // CreateDocument creates a new document in Firestore
 func CreateDocument(ctx context.Context, doc Document) (string, error) {
 	docRef, _, err := client.Collection("salafifatawa").Add(ctx, map[string]interface{}{
+		"folder":   doc.Folder,
 		"title":    doc.Title,
 		"author":   doc.Author,
 		"question": doc.Question,
