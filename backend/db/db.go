@@ -3,6 +3,7 @@ package db
 import (
 	"cloud.google.com/go/firestore"
 	"context"
+	"errors"
 	"google.golang.org/api/iterator"
 	"strings"
 
@@ -86,7 +87,7 @@ func SearchDocuments(c context.Context, searchQuery string) ([]Document, error) 
 
 	for {
 		doc, err := iter.Next()
-		if err == iterator.Done {
+		if errors.Is(err, iterator.Done) {
 			break
 		}
 		if err != nil {
@@ -114,7 +115,7 @@ func GetAllDocuments(c context.Context) ([]Document, error) {
 
 	for {
 		doc, err := iter.Next()
-		if err == iterator.Done {
+		if errors.Is(err, iterator.Done) {
 			break
 		}
 		if err != nil {
