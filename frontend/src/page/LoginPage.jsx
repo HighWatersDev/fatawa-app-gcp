@@ -3,6 +3,7 @@ import Text from '../components/elements/Text';
 import {  signInWithEmailAndPassword   } from 'firebase/auth';
 import { auth } from '../firebase';
 import { NavLink, useNavigate } from 'react-router-dom'
+import Header from '../components/Header';
 
 const Login = () => {
     const navigate = useNavigate();
@@ -27,6 +28,7 @@ const Login = () => {
 
     return(
         <>
+            <Header />
             <main >
                 <section>
                     <div className="flex h-screen items-center justify-center px-4 sm:px-6 lg:px-8">

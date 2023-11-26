@@ -2,6 +2,7 @@ import React, {useEffect, useState} from 'react';
 import axios from 'axios';
 import {auth} from '../firebase';
 import { withAuth } from '../components/withAuth';
+import Header from '../components/Header';
 
 function DocumentsPage() {
     const [title, setTitle] = useState('');
@@ -12,6 +13,7 @@ function DocumentsPage() {
     const [searchResults, setSearchResults] = useState([]);
     const [fatwaId, setFatwaId] = useState('');
     const [fatwaResult, setFatwaResult] = useState([]);
+    const [fatwas, setFatwas] = useState([]);
     const [successMessage, setSuccessMessage] = useState('');
     const [errorMessage, setErrorMessage] = useState('');
     const handleSubmit = async (event) => {
@@ -46,7 +48,9 @@ function DocumentsPage() {
                 'Authorization': `Bearer ${token}`
             };
             const response = await axios.get(`http://localhost:8080/v1/documents/search?query=${searchQuery}`, { headers });
-            setSearchResults(response.data['documents']);
+            const documents = response.data && response.data['documents'];
+            setSearchResults(documents || []);
+            // setSearchResults(response.data['documents']);
             setErrorMessage('');
         } catch (error) {
             setSearchResults([]);
@@ -70,8 +74,24 @@ function DocumentsPage() {
         }
     };
 
+    const fetchAllDocuments = async () => {
+        try {
+            const token = await auth.currentUser.getIdToken();
+            const headers = {
+                'Authorization': `Bearer ${token}`
+            };
+            const response = await axios.get(`http://localhost:8080/v1/documents/all`, { headers });
+            setFatwas(response.data || []);
+            setErrorMessage('');
+        } catch (error) {
+            setFatwas([]);
+            setErrorMessage('Error fetching documents. Please try again later.');
+        }
+    };
+
     return (
         <div>
+            <Header/>
             <h2>Submit a New Fatwa</h2>
             <form onSubmit={handleSubmit}>
                 <label>
@@ -82,7 +102,7 @@ function DocumentsPage() {
                         onChange={(event) => setTitle(event.target.value)}
                     />
                 </label>
-                <br />
+                <br/>
                 <label>
                     Author:
                     <input
@@ -91,7 +111,7 @@ function DocumentsPage() {
                         onChange={(event) => setAuthor(event.target.value)}
                     />
                 </label>
-                <br />
+                <br/>
                 <label>
                     Question:
                     <input
@@ -100,7 +120,7 @@ function DocumentsPage() {
                         onChange={(event) => setQuestion(event.target.value)}
                     />
                 </label>
-                <br />
+                <br/>
                 <label>
                     Answer:
                     <input
@@ -109,12 +129,12 @@ function DocumentsPage() {
                         onChange={(event) => setAnswer(event.target.value)}
                     />
                 </label>
-                <br />
+                <br/>
                 <button type="submit">Submit</button>
             </form>
             {successMessage && <p>{successMessage}</p>}
             {errorMessage && <p>{errorMessage}</p>}
-            <hr />
+            <hr/>
             <h2>Search for Fatwa</h2>
             <form onSubmit={handleSearchSubmit}>
                 <label>
@@ -125,7 +145,7 @@ function DocumentsPage() {
                         onChange={(event) => setSearchQuery(event.target.value)}
                     />
                 </label>
-                <br />
+                <br/>
                 <button type="submit">Search</button>
             </form>
             {errorMessage && <p>{errorMessage}</p>}
@@ -144,7 +164,7 @@ function DocumentsPage() {
                     ))}
                 </ul>
             )}
-            <hr />
+            <hr/>
             <h2>Get Fatwa by Id</h2>
             <form onSubmit={handleSearchByIdSubmit}>
                 <label>
@@ -155,7 +175,7 @@ function DocumentsPage() {
                         onChange={(event) => setFatwaId(event.target.value)}
                     />
                 </label>
-                <br />
+                <br/>
                 <button type="submit">Get Fatwa</button>
             </form>
             {errorMessage && <p>{errorMessage}</p>}
@@ -173,6 +193,21 @@ function DocumentsPage() {
                     ))}
                 </ul>
             )}
+                <h1>All Documents</h1>
+                <button onClick={fetchAllDocuments}>Fetch All Fatawa</button>
+                {errorMessage && <p>{errorMessage}</p>}
+                <div style={{maxHeight: '400px', overflowY: 'auto', border: '1px solid #ccc', padding: '10px'}}>
+                    <ul>
+                        {fatwas.map((document) => (
+                                <li key={document.id}>
+                                    <h3>{document.title}</h3>
+                                    <p>Author: {document.author}</p>
+                                    <p>Question: {document.question}</p>
+                                    <p>Answer: {document.answer}</p>
+                                </li>
+                        ))}
+                    </ul>
+                </div>
         </div>
     );
 }

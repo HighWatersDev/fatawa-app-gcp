@@ -11,7 +11,7 @@ import (
 
 type Document struct {
 	ID       string `json:"id"`
-	Folder   string `json:"folder"`
+	Audio    string `json:"audio"`
 	Title    string `json:"title"`
 	Author   string `json:"author"`
 	Question string `json:"question"`
@@ -35,7 +35,7 @@ func InitializeFirestoreClient(ctx context.Context, projectID string) error {
 // CreateDocument creates a new document in Firestore
 func CreateDocument(ctx context.Context, doc Document) (string, error) {
 	docRef, _, err := client.Collection("salafifatawa").Add(ctx, map[string]interface{}{
-		"folder":   doc.Folder,
+		"audio":    doc.Audio,
 		"title":    doc.Title,
 		"author":   doc.Author,
 		"question": doc.Question,
@@ -64,7 +64,7 @@ func GetDocumentByID(ctx context.Context, docID string) (Document, error) {
 	docData := docSnapshot.Data()
 	doc := Document{
 		ID:       docSnapshot.Ref.ID,
-		Folder:   docData["folder"].(string),
+		Audio:    docData["audio"].(string),
 		Title:    docData["title"].(string),
 		Author:   docData["author"].(string),
 		Question: docData["question"].(string),
