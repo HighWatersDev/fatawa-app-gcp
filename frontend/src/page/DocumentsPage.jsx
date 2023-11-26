@@ -198,13 +198,14 @@ function DocumentsPage() {
                 {errorMessage && <p>{errorMessage}</p>}
                 <div style={{maxHeight: '400px', overflowY: 'auto', border: '1px solid #ccc', padding: '10px'}}>
                     <ul>
-                        {fatwas.map((document) => (
-                                <li key={document.id}>
-                                    <h3>{document.title}</h3>
-                                    <p>Author: {document.author}</p>
-                                    <p>Question: {document.question}</p>
-                                    <p>Answer: {document.answer}</p>
-                                </li>
+                        {fatwas.map((fatwa) => (
+                            <li key={fatwa.id}>
+                                <h3>{fatwa.title}</h3>
+                                <p>Id: {fatwa.id}</p>
+                                <p>Author: {fatwa.author}</p>
+                                <p>Question: {fatwa.question}</p>
+                                <p>Answer: {fatwa.answer}</p>
+                            </li>
                         ))}
                     </ul>
                 </div>
