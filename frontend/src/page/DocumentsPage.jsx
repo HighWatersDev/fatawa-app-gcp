@@ -196,7 +196,7 @@ function DocumentsPage() {
                 <h1>All Documents</h1>
                 <button onClick={fetchAllDocuments}>Fetch All Fatawa</button>
                 {errorMessage && <p>{errorMessage}</p>}
-                <div style={{maxHeight: '400px', overflowY: 'auto', border: '1px solid #ccc', padding: '10px'}}>
+                <div style={{maxHeight: '200px', overflowY: 'auto', border: '1px solid #ccc', padding: '10px'}}>
                     <ul>
                         {fatwas.map((fatwa) => (
                             <li key={fatwa.id}>
