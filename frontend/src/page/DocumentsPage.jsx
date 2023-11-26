@@ -193,7 +193,7 @@ function DocumentsPage() {
                     ))}
                 </ul>
             )}
-                <h1>All Documents</h1>
+                <h1>All Fatawa</h1>
                 <button onClick={fetchAllDocuments}>Fetch All Fatawa</button>
                 {errorMessage && <p>{errorMessage}</p>}
                 <div style={{maxHeight: '200px', overflowY: 'auto', border: '1px solid #ccc', padding: '10px'}}>
