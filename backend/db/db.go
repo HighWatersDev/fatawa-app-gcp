@@ -17,6 +17,7 @@ type Document struct {
 	Author   string `json:"author"`
 	Question string `json:"question"`
 	Answer   string `json:"answer"`
+	Complete string `json:"complete"`
 }
 
 var client *firestore.Client
@@ -41,6 +42,7 @@ func CreateDocument(ctx context.Context, doc Document) (string, error) {
 		"author":   doc.Author,
 		"question": doc.Question,
 		"answer":   doc.Answer,
+		"complete": doc.Complete,
 	})
 
 	if err != nil {
@@ -70,6 +72,7 @@ func GetDocumentByID(ctx context.Context, docID string) (Document, error) {
 		Author:   docData["author"].(string),
 		Question: docData["question"].(string),
 		Answer:   docData["answer"].(string),
+		Complete: docData["complete"].(string),
 	}
 
 	return doc, nil

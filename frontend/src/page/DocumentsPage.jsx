@@ -6,6 +6,7 @@ import Header from '../components/Header';
 
 function DocumentsPage() {
     const [title, setTitle] = useState('');
+    const [audio, setAudio] = useState('');
     const [author, setAuthor] = useState('');
     const [question, setQuestion] = useState('');
     const [answer, setAnswer] = useState('');
@@ -24,6 +25,7 @@ function DocumentsPage() {
         };
         const data = {
             title,
+            audio,
             author,
             question,
             answer
@@ -100,6 +102,15 @@ function DocumentsPage() {
                         type="text"
                         value={title}
                         onChange={(event) => setTitle(event.target.value)}
+                    />
+                </label>
+                <br/>
+                <label>
+                    Audio:
+                    <input
+                        type="text"
+                        value={audio}
+                        onChange={(event) => setAudio(event.target.value)}
                     />
                 </label>
                 <br/>
