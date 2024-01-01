@@ -4,6 +4,7 @@ import (
 	"fatawa-app-gcp/backend/db"
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"strings"
 )
 
 func getDocumentByID(c *gin.Context) {
@@ -11,6 +12,10 @@ func getDocumentByID(c *gin.Context) {
 
 	doc, err := db.GetDocumentByID(c, docID)
 	if err != nil {
+		if strings.Contains(err.Error(), "document with ID") && strings.Contains(err.Error(), "not found") {
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{"code": http.StatusInternalServerError, "message": "Server Error"})
 		return
 	}
@@ -21,23 +26,57 @@ func getDocumentByID(c *gin.Context) {
 func createDocument(c *gin.Context) {
 	var doc db.Document
 	if err := c.ShouldBindJSON(&doc); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"code": http.StatusBadRequest, "message": "Bad Request"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Bad Request"})
 		return
 	}
 
-	// Check if document already exists
-	if _, err := db.GetDocumentByID(c, doc.ID); err == nil {
-		c.JSON(http.StatusConflict, gin.H{"code": http.StatusConflict, "message": "Document already exists"})
+	// Extract the document ID from the URL parameter
+	docID := c.Param("id")
+	if docID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Document ID is required"})
 		return
 	}
 
-	docID, err := db.CreateDocument(c, doc)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"code": http.StatusInternalServerError, "message": "Server Error"})
+	// Check if the document already exists
+	if _, err := db.GetDocumentByID(c, docID); err == nil {
+		c.JSON(http.StatusConflict, gin.H{"error": "Document already exists"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"document_id": docID})
+	// Pass the document ID to the CreateDocument function
+	if err := db.CreateDocument(c, docID, doc); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Server Error"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Document created successfully", "document_id": docID})
+}
+
+func updateDocument(c *gin.Context) {
+	var updatedDoc db.Document
+	if err := c.ShouldBindJSON(&updatedDoc); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Bad Request"})
+		return
+	}
+
+	docID := c.Param("id") // Assuming the document ID is passed as a URL parameter
+	if err := db.UpdateDocument(c, docID, updatedDoc); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Server Error"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Document updated successfully"})
+}
+
+func deleteDocument(c *gin.Context) {
+	docID := c.Param("id") // Assuming the document ID is passed as a URL parameter
+
+	if err := db.DeleteDocument(c, docID); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Server Error"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Document deleted successfully"})
 }
 
 func searchDocuments(c *gin.Context) {

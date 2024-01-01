@@ -59,12 +59,19 @@ func AuthenticateUser() gin.HandlerFunc {
 
 		// Verify ID token
 		token, err := authClient.VerifyIDToken(ctx, idToken)
-		fmt.Println("token: ", token.UID)
 		if err != nil {
 			ctx.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 			ctx.Abort()
 			return
 		}
+
+		// Check if token is nil before accessing its properties
+		if token == nil {
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+			ctx.Abort()
+			return
+		}
+		fmt.Println("token: ", token.UID)
 
 		// Set user ID as context value
 		ctx.Set("userID", token.UID)

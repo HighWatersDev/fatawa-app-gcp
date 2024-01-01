@@ -33,10 +33,12 @@ func SetupRouter(ctx context.Context) *gin.Engine {
 	v1 := r.Group("/v1")
 	{
 		v1.GET("/documents/:id", auth.AuthenticateUser(), getDocumentByID)
-		v1.POST("/documents", auth.AuthenticateUser(), createDocument)
+		v1.POST("/documents/:id", auth.AuthenticateUser(), createDocument)
+		v1.PUT("/documents/:id", auth.AuthenticateUser(), updateDocument)
 		v1.GET("/documents/search", auth.AuthenticateUser(), searchDocuments)
 		v1.GET("/documents/all", auth.AuthenticateUser(), getAllDocuments)
 		v1.POST("/verify", auth.AuthenticateUser())
+		v1.DELETE("/documents/:id", auth.AuthenticateUser(), deleteDocument)
 	}
 
 	return r

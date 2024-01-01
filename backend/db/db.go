@@ -4,7 +4,11 @@ import (
 	"cloud.google.com/go/firestore"
 	"context"
 	"errors"
+	"fmt"
 	"google.golang.org/api/iterator"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+	"log"
 	"strings"
 
 	"google.golang.org/api/option"
@@ -14,10 +18,11 @@ type Document struct {
 	ID       string `json:"id"`
 	Audio    string `json:"audio"`
 	Title    string `json:"title"`
+	Topic    string `json:"topic"`
 	Author   string `json:"author"`
 	Question string `json:"question"`
 	Answer   string `json:"answer"`
-	Complete string `json:"complete"`
+	Complete bool   `json:"complete"`
 }
 
 var client *firestore.Client
@@ -35,10 +40,13 @@ func InitializeFirestoreClient(ctx context.Context, projectID string) error {
 }
 
 // CreateDocument creates a new document in Firestore
-func CreateDocument(ctx context.Context, doc Document) (string, error) {
-	docRef, _, err := client.Collection("salafifatawa").Add(ctx, map[string]interface{}{
+func CreateDocument(ctx context.Context, docID string, doc Document) error {
+	docRef := client.Collection("salafifatawa").Doc(docID) // Create a document reference with a specified ID
+
+	_, err := docRef.Set(ctx, map[string]interface{}{
 		"audio":    doc.Audio,
 		"title":    doc.Title,
+		"topic":    doc.Topic,
 		"author":   doc.Author,
 		"question": doc.Question,
 		"answer":   doc.Answer,
@@ -46,10 +54,31 @@ func CreateDocument(ctx context.Context, doc Document) (string, error) {
 	})
 
 	if err != nil {
-		return "", err
+		return err
 	}
 
-	return docRef.ID, nil
+	return nil
+}
+
+// UpdateDocument updates an existing document in Firestore
+func UpdateDocument(ctx context.Context, docID string, updatedDoc Document) error {
+	_, err := client.Collection("salafifatawa").Doc(docID).Set(ctx, map[string]interface{}{
+		"audio":    updatedDoc.Audio,
+		"title":    updatedDoc.Title,
+		"topic":    updatedDoc.Topic,
+		"author":   updatedDoc.Author,
+		"question": updatedDoc.Question,
+		"answer":   updatedDoc.Answer,
+		"complete": updatedDoc.Complete,
+	}, firestore.MergeAll)
+
+	if err != nil {
+		log.Printf("Failed to update document: %v", err)
+		return err
+	}
+
+	log.Printf("Document with ID %s updated successfully", docID)
+	return nil
 }
 
 // GetDocumentByID retrieves a single document by ID
@@ -60,7 +89,16 @@ func GetDocumentByID(ctx context.Context, docID string) (Document, error) {
 	// Get document data
 	docSnapshot, err := docRef.Get(ctx)
 	if err != nil {
+		// Check if the error is because the document was not found
+		if status.Code(err) == codes.NotFound {
+			return Document{}, fmt.Errorf("document with ID %s not found: %w", docID, err)
+		}
 		return Document{}, err
+	}
+
+	// Ensure the document snapshot exists
+	if !docSnapshot.Exists() {
+		return Document{}, fmt.Errorf("document with ID %s not found", docID)
 	}
 
 	// Parse document data into Document struct
@@ -69,10 +107,11 @@ func GetDocumentByID(ctx context.Context, docID string) (Document, error) {
 		ID:       docSnapshot.Ref.ID,
 		Audio:    docData["audio"].(string),
 		Title:    docData["title"].(string),
+		Topic:    docData["topic"].(string),
 		Author:   docData["author"].(string),
 		Question: docData["question"].(string),
 		Answer:   docData["answer"].(string),
-		Complete: docData["complete"].(string),
+		Complete: docData["complete"].(bool),
 	}
 
 	return doc, nil
@@ -138,4 +177,16 @@ func GetAllDocuments(c context.Context) ([]Document, error) {
 	}
 
 	return documents, nil
+}
+
+// DeleteDocument deletes a document in Firestore by ID
+func DeleteDocument(ctx context.Context, docID string) error {
+	_, err := client.Collection("salafifatawa").Doc(docID).Delete(ctx)
+	if err != nil {
+		log.Printf("Failed to delete document with ID %s: %v", docID, err)
+		return err
+	}
+
+	log.Printf("Document with ID %s deleted successfully", docID)
+	return nil
 }
