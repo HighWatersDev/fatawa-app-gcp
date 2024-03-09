@@ -108,6 +108,50 @@ curl -X POST "http://your-api-hostname.com/documents/search" \
 -d '{"query": "test", "isSplitAudio": true, "parentDocID": "<Parent_Document_ID>"}'
 ```
 
+#### Get All Documents
+
+- URL: /documents/all
+
+- Method: GET
+
+- Description: Get all parent documents or all child documents when parentDocID is provided.
+
+- Content-Type: application/json
+
+- Request Body:
+
+  - For parent docs:
+
+  ```json
+  { }
+  ```
+
+  - Example cURL Request:
+
+  ```bash
+  curl -X POST "http://your-api-hostname.com/documents/all" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <Your_API_Key>" \
+  -d '{}'
+  ```
+  
+  - For child docs:
+ 
+  ```json
+  {
+  "parentDocID": "<Parent_Doc_ID"
+  }
+  ```
+  
+  - Example cURL Request:
+
+  ```bash
+  curl -X POST "http://your-api-hostname.com/documents/all" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <Your_API_Key>" \
+  -d '{"parentDocID": "Parent_Doc_ID"}'
+  ```
+
 #### Delete Document
 
 - URL: /documents/{docID}

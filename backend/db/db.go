@@ -33,6 +33,8 @@ type ParentDocument struct {
 
 var client *firestore.Client
 
+var collection = "salafifatawa" // os.Getenv("DB_COLLECTION")
+
 // InitializeFirestoreClient initializes the Firestore client
 func InitializeFirestoreClient(ctx context.Context, projectID string) error {
 	creds := option.WithCredentialsFile("backend/salafifatawa-firestore.json")
@@ -56,7 +58,7 @@ func CreateDocument(ctx context.Context, isSplitAudio bool, parentDocID string, 
 			return "", fmt.Errorf("invalid document data for split audio")
 		}
 
-		docRef = client.Collection("salafifatawa").Doc(parentDocID).Collection("split-audios").Doc(docID)
+		docRef = client.Collection(collection).Doc(parentDocID).Collection("split-audios").Doc(docID)
 		_, err := docRef.Set(ctx, map[string]interface{}{
 			"audio":    doc.Audio,
 			"title":    doc.Title,
@@ -74,7 +76,7 @@ func CreateDocument(ctx context.Context, isSplitAudio bool, parentDocID string, 
 		if !ok {
 			return "", fmt.Errorf("invalid document data for parent audio")
 		}
-		docRef = client.Collection("salafifatawa").NewDoc()
+		docRef = client.Collection(collection).NewDoc()
 		_, err := docRef.Set(ctx, map[string]interface{}{
 			"audio":    parentDoc.Audio,
 			"author":   parentDoc.Author,
@@ -98,7 +100,7 @@ func UpdateDocument(ctx context.Context, isSplitAudio bool, parentDocID string, 
 		if !ok {
 			return fmt.Errorf("invalid document data for split audio")
 		}
-		docRef = client.Collection("salafifatawa").Doc(parentDocID).Collection("split-audios").Doc(docID)
+		docRef = client.Collection(collection).Doc(parentDocID).Collection("split-audios").Doc(docID)
 		_, err := docRef.Set(ctx, map[string]interface{}{
 			"audio":    doc.Audio,
 			"title":    doc.Title,
@@ -120,7 +122,7 @@ func UpdateDocument(ctx context.Context, isSplitAudio bool, parentDocID string, 
 		if !ok {
 			return fmt.Errorf("invalid document data for parent audio")
 		}
-		docRef = client.Collection("salafifatawa").Doc(docID)
+		docRef = client.Collection(collection).Doc(docID)
 		_, err := docRef.Set(ctx, map[string]interface{}{
 			"audio":    parentDoc.Audio,
 			"author":   parentDoc.Author,
@@ -140,9 +142,9 @@ func GetDocumentByID(ctx context.Context, isSplitAudio bool, parentDocID string,
 	var docRef *firestore.DocumentRef
 
 	if isSplitAudio {
-		docRef = client.Collection("salafifatawa").Doc(parentDocID).Collection("split-audios").Doc(docID)
+		docRef = client.Collection(collection).Doc(parentDocID).Collection("split-audios").Doc(docID)
 	} else {
-		docRef = client.Collection("salafifatawa").Doc(docID)
+		docRef = client.Collection(collection).Doc(parentDocID)
 	}
 
 	docSnapshot, err := docRef.Get(ctx)
@@ -183,14 +185,14 @@ func SearchDocuments(ctx context.Context, isSplitAudio bool, parentDocID string,
 
 	if isSplitAudio {
 		// Search in the 'split-audios' subcollection
-		iter = client.Collection("salafifatawa").Doc(parentDocID).Collection("split-audios").
+		iter = client.Collection(collection).Doc(parentDocID).Collection("split-audios").
 			OrderBy("title", firestore.Asc).
 			StartAt(strings.ToLower(searchQuery)).
 			EndAt(strings.ToLower(searchQuery + "\uf8ff")).
 			Documents(ctx)
 	} else {
 		// Search in the 'salafifatawa' collection
-		iter = client.Collection("salafifatawa").
+		iter = client.Collection(collection).
 			OrderBy("title", firestore.Asc).
 			StartAt(strings.ToLower(searchQuery)).
 			EndAt(strings.ToLower(searchQuery + "\uf8ff")).
@@ -239,9 +241,9 @@ func GetAllDocuments(ctx context.Context, parentDocID string) ([]interface{}, er
 	var iter *firestore.DocumentIterator
 
 	if parentDocID != "" {
-		iter = client.Collection("salafifatawa").Doc(parentDocID).Collection("split-audios").Documents(ctx)
+		iter = client.Collection(collection).Doc(parentDocID).Collection("split-audios").Documents(ctx)
 	} else {
-		iter = client.Collection("salafifatawa").Documents(ctx)
+		iter = client.Collection(collection).Documents(ctx)
 	}
 
 	defer iter.Stop()
@@ -287,9 +289,9 @@ func DeleteDocument(ctx context.Context, docID string, parentDocID string) error
 	var docRef *firestore.DocumentRef
 
 	if parentDocID != "" {
-		docRef = client.Collection("salafifatawa").Doc(parentDocID).Collection("split-audios").Doc(docID)
+		docRef = client.Collection(collection).Doc(parentDocID).Collection("split-audios").Doc(docID)
 	} else {
-		docRef = client.Collection("salafifatawa").Doc(docID)
+		docRef = client.Collection(collection).Doc(docID)
 	}
 
 	_, err := docRef.Delete(ctx)

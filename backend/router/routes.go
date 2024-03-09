@@ -34,7 +34,7 @@ func GenerateRandomSuffix(length int) (string, error) {
 	return base64.URLEncoding.EncodeToString(bytes), nil
 }
 
-func createDocument(c *gin.Context) {
+func CreateDocument(c *gin.Context) {
 	var req DocumentRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		log.Printf("Error binding JSON: %v", err)
@@ -73,7 +73,7 @@ func createDocument(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Document created successfully", "document_id": docID})
 }
 
-func updateDocument(c *gin.Context) {
+func UpdateDocument(c *gin.Context) {
 	var req DocumentRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Bad Request"})
@@ -113,7 +113,7 @@ func updateDocument(c *gin.Context) {
 	}
 }
 
-func getDocumentByID(c *gin.Context) {
+func GetDocumentByID(c *gin.Context) {
 	var req DocumentRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Bad Request"})
@@ -153,7 +153,7 @@ func getDocumentByID(c *gin.Context) {
 	}
 }
 
-func searchDocuments(c *gin.Context) {
+func SearchDocuments(c *gin.Context) {
 	var req SearchRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Bad Request", "details": err.Error()})
@@ -169,11 +169,14 @@ func searchDocuments(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"documents": docs})
 }
 
-func getAllDocuments(c *gin.Context) {
+func GetAllDocuments(c *gin.Context) {
+	var req DocumentRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Bad Request"})
+		return
+	}
 
-	parentDocID := c.Query("parentDocID")
-
-	docs, err := db.GetAllDocuments(c, parentDocID)
+	docs, err := db.GetAllDocuments(c, req.ParentDocID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve documents", "details": err.Error()})
 		return
@@ -183,7 +186,7 @@ func getAllDocuments(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"documents": docs})
 }
 
-func deleteDocument(c *gin.Context) {
+func DeleteDocument(c *gin.Context) {
 	docID := c.Param("id") // Assuming the document ID is passed as a URL parameter
 
 	if docID == "" {
