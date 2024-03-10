@@ -34,7 +34,6 @@ Authorization: Bearer <Your_API_Key>
     ```json
     {
     "isSplitAudio": false,
-    "parentDocID": "<Parent_Doc_ID>",
     "parentDocument": {
     "audio": "path/to/parent/audio.mp3",
     "author": "Author Name",
