@@ -8,7 +8,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"google.golang.org/api/option"
 	"net/http"
-	"strings"
 )
 
 var authClient *auth.Client
@@ -54,8 +53,6 @@ func AuthenticateUser() gin.HandlerFunc {
 			ctx.AbortWithStatus(http.StatusForbidden)
 			return
 		}
-		idToken := strings.Replace(authHeader, "Bearer ", "", 1)
-		fmt.Println("idToken: ", idToken)
 
 		// Verify ID token
 		token, err := authClient.VerifyIDToken(ctx, idToken)
