@@ -76,7 +76,7 @@ func CreateDocument(ctx context.Context, isSplitAudio bool, parentDocID string, 
 		if !ok {
 			return "", fmt.Errorf("invalid document data for parent audio")
 		}
-		docRef = client.Collection(collection).NewDoc()
+		docRef = client.Collection(collection).Doc(parentDocID)
 		_, err := docRef.Set(ctx, map[string]interface{}{
 			"audio":    parentDoc.Audio,
 			"author":   parentDoc.Author,

@@ -45,12 +45,13 @@ func CreateDocument(c *gin.Context) {
 	var docID string
 	var err error
 
+	// Ensure parentDocID is provided for split audio documents
+	if req.ParentDocID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Parent Document ID is required."})
+		return
+	}
+
 	if req.IsSplitAudio {
-		// Ensure parentDocID is provided for split audio documents
-		if req.ParentDocID == "" {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Parent Document ID is required for split audio documents"})
-			return
-		}
 		// Generate a random suffix for the child document ID
 		suffix, err := GenerateRandomSuffix(3)
 		if err != nil {
@@ -62,7 +63,7 @@ func CreateDocument(c *gin.Context) {
 	} else {
 		// Directly use ParentDocument from req for creating a parent document
 		// ParentDocID is generated inside the CreateDocument function for parent documents
-		docID, err = db.CreateDocument(c, req.IsSplitAudio, "", "", req.ParentDocument)
+		docID, err = db.CreateDocument(c, req.IsSplitAudio, req.ParentDocID, "", req.ParentDocument)
 	}
 
 	if err != nil {
