@@ -4,3 +4,4 @@ backend/salafifatawa-firestore.json
 .idea
 frontend/node_modules
 node_modules
+artifacts
