@@ -184,3 +184,107 @@ curl -X POST "http://your-api-hostname.com/documents/search" \
 
 Replace http://your-api-hostname.com with your actual API hostname.
 Ensure to replace placeholder values like <Your_API_Key>, <Parent_Document_ID>, <Doc_ID>, and <Child_Doc_ID> with actual values appropriate for your requests.
+
+# Python FastAPI Fatawa Processor
+
+## Endpoints
+
+### Upload Files
+
+- **Endpoint**: `/upload`
+- **Method**: `POST`
+- **Auth Required**: Yes
+- **Description**: Uploads files to Azure storage.
+- **Parameters**:
+  - `path`: Path where the file will be uploaded.
+  - `author`: Name of the file's author.
+
+**Example**:
+```sh
+curl -X POST "http://localhost:8000/upload"      -H "Authorization: Bearer YOUR_TOKEN"      -d "path=/path/to/upload&author=JohnDoe"
+```
+
+### List Blob
+
+- **Endpoint**: `/list`
+- **Method**: `GET`
+- **Auth Required**: Yes
+- **Description**: Lists files in a specified blob path.
+- **Parameters**:
+  - `path`: Blob path to list files from.
+
+**Example**:
+```sh
+curl "http://localhost:8000/list?path=/myblob/path"      -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+### Download
+
+- **Endpoint**: `/download`
+- **Method**: `GET`
+- **Auth Required**: Yes
+- **Description**: Downloads a file from storage.
+- **Parameters**:
+  - `file_path`: Path of the file to download.
+  - `author`: Author of the file.
+
+**Example**:
+```sh
+curl "http://localhost:8000/download?file_path=/path/to/file&author=JohnDoe"      -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+### Transcribe
+
+- **Endpoint**: `/transcribe`
+- **Method**: `GET`
+- **Auth Required**: Yes
+- **Description**: Transcribes audio content from a given blob.
+- **Parameters**:
+  - `blob`: Path to the blob containing audio to transcribe.
+
+**Example**:
+```sh
+curl "http://localhost:8000/transcribe?blob=/path/to/audio"      -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+### Translate
+
+- **Endpoint**: `/translate`
+- **Method**: `GET`
+- **Auth Required**: Yes
+- **Description**: Translates transcribed content.
+- **Parameters**:
+  - `blob`: Path to the blob containing transcribed content to translate.
+
+**Example**:
+```sh
+curl "http://localhost:8000/translate?blob=/path/to/transcribed"      -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+### Convert to ACC
+
+- **Endpoint**: `/to_acc`
+- **Method**: `GET`
+- **Auth Required**: Yes
+- **Description**: Converts an audio file to ACC format.
+- **Parameters**:
+  - `blob`: Path to the local WAV file to convert.
+
+**Example**:
+```sh
+curl "http://localhost:8000/to_acc?blob=/path/to/wavfile"      -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+### Convert to WAV
+
+- **Endpoint**: `/to_wav`
+- **Method**: `GET`
+- **Auth Required**: Yes
+- **Description**: Converts an audio file to WAV format.
+- **Parameters**:
+  - `blob`: Path to the file to convert.
+
+**Example**:
+```sh
+curl "http://localhost:8000/to_wav?blob=/path/to/accfile"      -H "Authorization: Bearer YOUR_TOKEN"
+```
