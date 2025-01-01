@@ -1,305 +1,249 @@
 package db
 
 import (
-	"cloud.google.com/go/firestore"
 	"context"
-	"errors"
 	"fmt"
-	"google.golang.org/api/iterator"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
-	"log"
-	"strings"
+	"os"
+	"sync"
+	"time"
 
-	"google.golang.org/api/option"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-type Document struct {
-	ID       string `json:"id"`
-	Audio    string `json:"audio"`
-	Title    string `json:"title"`
-	Topic    string `json:"topic"`
-	Author   string `json:"author"`
-	Question string `json:"question"`
-	Answer   string `json:"answer"`
+type FullAudio struct {
+	ID         string
+	Title      string
+	Author     string
+	FilePath   string
+	Duration   int
+	UploadTime time.Time
 }
 
-type ParentDocument struct {
-	ID       string `json:"id"`
-	Audio    string `json:"audio"`
-	Author   string `json:"author"`
-	Complete bool   `json:"complete"`
+type AudioSegment struct {
+	ID            int64
+	FullAudioID   string
+	StartTime     int
+	EndTime       int
+	Transcription string
+	Processed     bool
+	CreatedAt     time.Time
+	UpdatedAt     time.Time
 }
 
-var client *firestore.Client
+type QAPost struct {
+	ID             int64
+	AudioSegmentID int64
+	Question       string
+	Answer         string
+	PostTime       time.Time
+}
 
-var collection = "salafifatawa" // os.Getenv("DB_COLLECTION")
+type AudioDatabase struct {
+	pool *pgxpool.Pool
+}
 
-// InitializeFirestoreClient initializes the Firestore client
-func InitializeFirestoreClient(ctx context.Context, projectID string) error {
-	creds := option.WithCredentialsFile("backend/salafifatawa-firestore.json")
-	firestoreClient, err := firestore.NewClient(ctx, projectID, creds)
+var (
+	instance *AudioDatabase
+	once     sync.Once
+)
+
+func GetDB(ctx context.Context) (*AudioDatabase, error) {
+	var err error
+	once.Do(func() {
+		connString := os.Getenv("DB_CONN_STRING")
+		if connString == "" {
+			err = fmt.Errorf("DB_CONN_STRING environment variable is not set")
+			return
+		}
+		instance, err = NewAudioDatabase(connString)
+	})
+	return instance, err
+}
+
+// NewAudioDatabase creates a new database connection pool
+func NewAudioDatabase(connString string) (*AudioDatabase, error) {
+	config, err := pgxpool.ParseConfig(connString)
 	if err != nil {
-		return err
+		return nil, fmt.Errorf("unable to parse connection string: %v", err)
 	}
 
-	client = firestoreClient
-	return nil
-}
-
-// CreateDocument creates a new document in Firestore
-func CreateDocument(ctx context.Context, isSplitAudio bool, parentDocID string, docID string, docData interface{}) (string, error) {
-	var docRef *firestore.DocumentRef
-
-	if isSplitAudio {
-		// Convert docData to Document type
-		doc, ok := docData.(Document)
-		if !ok {
-			return "", fmt.Errorf("invalid document data for split audio")
-		}
-
-		docRef = client.Collection(collection).Doc(parentDocID).Collection("split-audios").Doc(docID)
-		_, err := docRef.Set(ctx, map[string]interface{}{
-			"audio":    doc.Audio,
-			"title":    doc.Title,
-			"topic":    doc.Topic,
-			"author":   doc.Author,
-			"question": doc.Question,
-			"answer":   doc.Answer,
-		})
-		if err != nil {
-			return "", err
-		}
-	} else {
-		// Convert docData to ParentDocument type
-		parentDoc, ok := docData.(ParentDocument)
-		if !ok {
-			return "", fmt.Errorf("invalid document data for parent audio")
-		}
-		docRef = client.Collection(collection).Doc(parentDocID)
-		_, err := docRef.Set(ctx, map[string]interface{}{
-			"audio":    parentDoc.Audio,
-			"author":   parentDoc.Author,
-			"complete": parentDoc.Complete,
-		})
-		if err != nil {
-			return "", err
-		}
-	}
-
-	return docRef.ID, nil
-}
-
-// UpdateDocument updates an existing document in Firestore
-func UpdateDocument(ctx context.Context, isSplitAudio bool, parentDocID string, docID string, docData interface{}) error {
-	var docRef *firestore.DocumentRef
-
-	if isSplitAudio {
-
-		doc, ok := docData.(Document)
-		if !ok {
-			return fmt.Errorf("invalid document data for split audio")
-		}
-		docRef = client.Collection(collection).Doc(parentDocID).Collection("split-audios").Doc(docID)
-		_, err := docRef.Set(ctx, map[string]interface{}{
-			"audio":    doc.Audio,
-			"title":    doc.Title,
-			"topic":    doc.Topic,
-			"author":   doc.Author,
-			"question": doc.Question,
-			"answer":   doc.Answer,
-		}, firestore.MergeAll)
-		if err != nil {
-			log.Printf("Failed to update document: %v", err)
-			return err
-		}
-
-		log.Printf("Document with ID %s updated successfully", docID)
-		return nil
-	} else {
-		// Assume updateData is of type ParentDocument (for parent audio)
-		parentDoc, ok := docData.(ParentDocument)
-		if !ok {
-			return fmt.Errorf("invalid document data for parent audio")
-		}
-		docRef = client.Collection(collection).Doc(docID)
-		_, err := docRef.Set(ctx, map[string]interface{}{
-			"audio":    parentDoc.Audio,
-			"author":   parentDoc.Author,
-			"complete": parentDoc.Complete,
-		}, firestore.MergeAll)
-		if err != nil {
-			log.Printf("Failed to update document: %v", err)
-			return err
-		}
-
-		log.Printf("Document with ID %s updated successfully", docID)
-		return nil
-	}
-}
-
-func GetDocumentByID(ctx context.Context, isSplitAudio bool, parentDocID string, docID string) (interface{}, error) {
-	var docRef *firestore.DocumentRef
-
-	if isSplitAudio {
-		docRef = client.Collection(collection).Doc(parentDocID).Collection("split-audios").Doc(docID)
-	} else {
-		docRef = client.Collection(collection).Doc(parentDocID)
-	}
-
-	docSnapshot, err := docRef.Get(ctx)
+	pool, err := pgxpool.NewWithConfig(context.Background(), config)
 	if err != nil {
-		// Check if the error is because the document was not found
-		if status.Code(err) == codes.NotFound {
-			return nil, fmt.Errorf("document with ID %s not found: %w", docID, err)
-		}
+		return nil, fmt.Errorf("unable to create connection pool: %v", err)
+	}
+
+	return &AudioDatabase{pool: pool}, nil
+}
+
+// CreateFullAudio inserts a new full audio record
+func (db *AudioDatabase) CreateFullAudio(fa *FullAudio) error {
+	ctx := context.Background()
+	query := `INSERT INTO full_audios 
+		(id, title, author, file_path, duration) 
+		VALUES ($1, $2, $3, $4, $5)`
+	
+	_, err := db.pool.Exec(ctx, query, 
+		fa.ID, 
+		fa.Title, 
+		fa.Author, 
+		fa.FilePath, 
+		fa.Duration,
+	)
+
+	return err
+}
+
+// CreateAudioSegment inserts a new audio segment
+func (db *AudioDatabase) CreateAudioSegment(segment *AudioSegment) error {
+	ctx := context.Background()
+	query := `INSERT INTO audio_segments 
+		(full_audio_id, start_time, end_time, transcription, processed, created_at, updated_at) 
+		VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`
+	
+	now := time.Now()
+	err := db.pool.QueryRow(ctx, query, 
+		segment.FullAudioID, 
+		segment.StartTime, 
+		segment.EndTime, 
+		segment.Transcription, 
+		segment.Processed,
+		now,
+		now,
+	).Scan(&segment.ID)
+
+	return err
+}
+
+// CreateQAPost inserts a new Q&A post
+func (db *AudioDatabase) CreateQAPost(post *QAPost) error {
+	ctx := context.Background()
+	query := `INSERT INTO qa_posts 
+		(audio_segment_id, question, answer) 
+		VALUES ($1, $2, $3) RETURNING id`
+	
+	err := db.pool.QueryRow(ctx, query, 
+		post.AudioSegmentID, 
+		post.Question, 
+		post.Answer,
+	).Scan(&post.ID)
+
+	return err
+}
+
+// GetFullAudioByID retrieves a full audio record by ID
+func (db *AudioDatabase) GetFullAudioByID(id string) (*FullAudio, error) {
+	ctx := context.Background()
+	query := `SELECT id, title, author, file_path, duration, upload_time 
+			  FROM full_audios WHERE id = $1`
+	
+	fa := &FullAudio{}
+	err := db.pool.QueryRow(ctx, query, id).Scan(
+		&fa.ID, 
+		&fa.Title, 
+		&fa.Author, 
+		&fa.FilePath, 
+		&fa.Duration, 
+		&fa.UploadTime,
+	)
+
+	if err != nil {
 		return nil, err
 	}
 
-	if !docSnapshot.Exists() {
-		return nil, fmt.Errorf("document with ID %s not found", docID)
-	}
-
-	// Dynamically choose the type to deserialize based on isSplitAudio
-	if isSplitAudio {
-		var doc Document
-		err = docSnapshot.DataTo(&doc)
-		if err != nil {
-			return nil, err
-		}
-		doc.ID = docSnapshot.Ref.ID // Ensure the document's ID is included
-		return doc, nil
-	} else {
-		var parentDoc ParentDocument
-		err = docSnapshot.DataTo(&parentDoc)
-		if err != nil {
-			return nil, err
-		}
-		parentDoc.ID = docSnapshot.Ref.ID // Ensure the document's ID is included
-		return parentDoc, nil
-	}
+	return fa, nil
 }
 
-func SearchDocuments(ctx context.Context, isSplitAudio bool, parentDocID string, searchQuery string) ([]interface{}, error) {
-	var iter *firestore.DocumentIterator
-
-	if isSplitAudio {
-		// Search in the 'split-audios' subcollection
-		iter = client.Collection(collection).Doc(parentDocID).Collection("split-audios").
-			OrderBy("title", firestore.Asc).
-			StartAt(strings.ToLower(searchQuery)).
-			EndAt(strings.ToLower(searchQuery + "\uf8ff")).
-			Documents(ctx)
-	} else {
-		// Search in the 'salafifatawa' collection
-		iter = client.Collection(collection).
-			OrderBy("title", firestore.Asc).
-			StartAt(strings.ToLower(searchQuery)).
-			EndAt(strings.ToLower(searchQuery + "\uf8ff")).
-			Documents(ctx)
-	}
-
-	defer iter.Stop()
-
-	var documents []interface{}
-	for {
-		doc, err := iter.Next()
-		if errors.Is(err, iterator.Done) {
-			break
-		}
-		if err != nil {
-			return nil, err
-		}
-
-		var document interface{}
-		if isSplitAudio {
-			var splitAudio Document
-			err := doc.DataTo(&splitAudio)
-			if err != nil {
-				return nil, err
-			}
-			splitAudio.ID = doc.Ref.ID
-			document = splitAudio
-		} else {
-			var parentAudio ParentDocument
-			err := doc.DataTo(&parentAudio)
-			if err != nil {
-				return nil, err
-			}
-			parentAudio.ID = doc.Ref.ID
-			document = parentAudio
-		}
-
-		documents = append(documents, document)
-	}
-
-	return documents, nil
-}
-
-func GetAllDocuments(ctx context.Context, parentDocID string) ([]interface{}, error) {
-	var documents []interface{}
-	var iter *firestore.DocumentIterator
-
-	if parentDocID != "" {
-		iter = client.Collection(collection).Doc(parentDocID).Collection("split-audios").Documents(ctx)
-	} else {
-		iter = client.Collection(collection).Documents(ctx)
-	}
-
-	defer iter.Stop()
-
-	for {
-		doc, err := iter.Next()
-		if errors.Is(err, iterator.Done) {
-			break
-		}
-		if err != nil {
-			return nil, err
-		}
-
-		var document interface{}
-		if parentDocID != "" {
-			// Deserialize into the child document structure
-			var childDoc Document // Assuming Document is the struct for child docs
-			err := doc.DataTo(&childDoc)
-			if err != nil {
-				return nil, err
-			}
-			childDoc.ID = doc.Ref.ID
-			document = childDoc
-		} else {
-			// Deserialize into the parent document structure
-			var parentDoc ParentDocument // Assuming ParentDocument is the struct for parent docs
-			err := doc.DataTo(&parentDoc)
-			if err != nil {
-				return nil, err
-			}
-			parentDoc.ID = doc.Ref.ID
-			document = parentDoc
-		}
-
-		documents = append(documents, document)
-	}
-
-	return documents, nil
-}
-
-// DeleteDocument deletes a document in Firestore by ID
-func DeleteDocument(ctx context.Context, docID string, parentDocID string) error {
-	var docRef *firestore.DocumentRef
-
-	if parentDocID != "" {
-		docRef = client.Collection(collection).Doc(parentDocID).Collection("split-audios").Doc(docID)
-	} else {
-		docRef = client.Collection(collection).Doc(docID)
-	}
-
-	_, err := docRef.Delete(ctx)
+// GetAudioSegmentsByFullAudioID retrieves segments for a specific full audio
+func (db *AudioDatabase) GetAudioSegmentsByFullAudioID(fullAudioID string) ([]AudioSegment, error) {
+	ctx := context.Background()
+	query := `SELECT id, full_audio_id, start_time, end_time, transcription, processed, created_at, updated_at 
+			  FROM audio_segments WHERE full_audio_id = $1`
+	
+	rows, err := db.pool.Query(ctx, query, fullAudioID)
 	if err != nil {
-		log.Printf("Failed to delete document with ID %s: %v", docID, err)
-		return err
+		return nil, err
+	}
+	defer rows.Close()
+
+	var segments []AudioSegment
+	for rows.Next() {
+		var segment AudioSegment
+		err := rows.Scan(
+			&segment.ID, 
+			&segment.FullAudioID, 
+			&segment.StartTime, 
+			&segment.EndTime, 
+			&segment.Transcription, 
+			&segment.Processed, 
+			&segment.CreatedAt, 
+			&segment.UpdatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		segments = append(segments, segment)
 	}
 
-	log.Printf("Document with ID %s deleted successfully", docID)
-	return nil
+	return segments, nil
+}
+
+// UpdateAudioSegmentProcessedStatus updates the processed status of a segment
+func (db *AudioDatabase) UpdateAudioSegmentProcessedStatus(segmentID int64, processed bool) error {
+	ctx := context.Background()
+	query := `UPDATE audio_segments 
+		SET processed = $2, updated_at = $3 
+		WHERE id = $1`
+	
+	_, err := db.pool.Exec(ctx, query, 
+		segmentID, 
+		processed, 
+		time.Now(),
+	)
+
+	return err
+}
+
+// GetQAPostsByAudioSegmentID retrieves Q&A posts for a specific audio segment
+func (db *AudioDatabase) GetQAPostsByAudioSegmentID(audioSegmentID int64) ([]QAPost, error) {
+	ctx := context.Background()
+	query := `SELECT id, audio_segment_id, question, answer, post_time 
+			  FROM qa_posts WHERE audio_segment_id = $1`
+	
+	rows, err := db.pool.Query(ctx, query, audioSegmentID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var posts []QAPost
+	for rows.Next() {
+		var post QAPost
+		err := rows.Scan(
+			&post.ID, 
+			&post.AudioSegmentID, 
+			&post.Question, 
+			&post.Answer, 
+			&post.PostTime,
+		)
+		if err != nil {
+			return nil, err
+		}
+		posts = append(posts, post)
+	}
+
+	return posts, nil
+}
+
+// DeleteFullAudio removes a full audio record by ID
+func (db *AudioDatabase) DeleteFullAudio(id string) error {
+	ctx := context.Background()
+	query := `DELETE FROM full_audios WHERE id = $1`
+	
+	_, err := db.pool.Exec(ctx, query, id)
+	return err
+}
+
+// Close terminates the database connection pool
+func (db *AudioDatabase) Close() {
+	db.pool.Close()
 }

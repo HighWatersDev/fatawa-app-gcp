@@ -2,10 +2,10 @@ package router
 
 import (
 	"context"
-	"fatawa-app-gcp/backend/auth"
 	"fatawa-app-gcp/backend/db"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"log"
 	"net/http/httputil"
 	"net/url"
 )
@@ -39,35 +39,34 @@ func SetupRouter(ctx context.Context) *gin.Engine {
 		AllowCredentials: true,
 	}))
 
-	// Initialize Firebase Auth client
-	err := auth.InitializeAuthClient(ctx)
+	// Initialize database connection using singleton
+	_, err := db.GetDB(ctx)
 	if err != nil {
-		panic(err)
-	}
-
-	// Initialize Firestore client
-	err = db.InitializeFirestoreClient(ctx, "salafifatawa")
-	if err != nil {
-		panic(err)
+		log.Fatalf("Failed to initialize database connection: %v", err)
 	}
 
 	// Define routes
 	v1 := r.Group("/v1")
 	{
-		v1.GET("/documents/:id", auth.AuthenticateUser(), GetDocumentByID)
-		v1.POST("/documents", auth.AuthenticateUser(), CreateDocument)
-		v1.PUT("/documents", auth.AuthenticateUser(), UpdateDocument)
-		v1.GET("/documents/search", auth.AuthenticateUser(), SearchDocuments)
-		v1.GET("/documents/all", auth.AuthenticateUser(), GetAllDocuments)
-		v1.POST("/verify", auth.AuthenticateUser())
-		v1.DELETE("/documents/:id", auth.AuthenticateUser(), DeleteDocument)
+		// Audio routes
+		v1.POST("/audio", CreateAudio)
+		v1.GET("/audio/:id", GetAudio)
+		v1.DELETE("/audio/:id", DeleteAudio)
+		
+		// Segment routes
+		v1.POST("/segment", CreateSegment)
+		v1.GET("/audio/:id/segments", GetAudioSegments)
+		v1.PUT("/segment/:id/processed", UpdateSegmentProcessed)
+		
+		// QA routes
+		v1.POST("/qa", CreateQA)
+		v1.GET("/segment/:id/qa", GetSegmentQA)
 	}
 
 	// Define proxy routes to forward requests to the Python FastAPI server
 	processor := r.Group("/v1/processor")
 	{
-		processorURL := "http://localhost:8000"                   // Adjust this to the URL of your Python server
-		processor.Use(auth.AuthenticateUser())                    // Apply the same authentication middleware
+		processorURL := "http://localhost:8000"              // Adjust this to the URL of your Python server
 		processor.Any("/*action", proxyToProcessor(processorURL)) // Proxy any request to /v1/processor/* to the Python server
 	}
 
